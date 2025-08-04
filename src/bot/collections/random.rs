@@ -3,6 +3,7 @@ use crate::bot::base::Bot;
 use crate::qd::state::GameState;
 use crate::qd::legalcomp::{get_possible_legal_moves};
 
+#[derive(Clone)]
 pub struct RandomBot;
 
 fn random_set_bit_index(bitboard: u64) -> Option<u32> {

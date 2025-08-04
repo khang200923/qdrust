@@ -1,3 +1,4 @@
+use rand::Rng;
 use crate::qd::legalcomp::{
     get_possible_legal_moves
 };
@@ -29,6 +30,16 @@ impl GameState {
 
     pub fn def() -> Self {
         Self::new(None, None, None, None)
+    }
+
+    pub fn def_rand() -> Self {
+        let mut blocks: u64 = 0;
+        let mut rng = rand::thread_rng();
+        for _ in 0..7 {
+            blocks |= 1 << rng.gen_range(0..64);
+        }
+        blocks &= !(1u64 << 4) & !(1u64 << 59);
+        Self::new(Some(4), Some(59), Some(blocks), Some(true))
     }
 
     pub fn make_move(&mut self, to: u8) {

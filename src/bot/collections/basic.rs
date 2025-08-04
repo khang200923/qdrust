@@ -4,7 +4,10 @@ use crate::qd::legalcomp::{get_possible_legal_moves};
 
 const INFINITY: f32 = 1e6;
 
-pub struct BasicBot;
+#[derive(Clone)]
+pub struct BasicBot {
+    depth: u32,
+}
 
 fn heuristic(state: &GameState) -> f32 {
     if state.result() == Some(true) {
@@ -81,9 +84,15 @@ fn minimax(state: &GameState, depth: u32) -> (f32, Option<u8>) {
     minimax_local(state, depth, -INFINITY, INFINITY, true)
 }
 
+impl BasicBot {
+    pub fn new(depth: u32) -> Self {
+        Self { depth: depth }
+    }
+}
+
 impl Bot for BasicBot {
     fn decide(&self, state: GameState) -> u8 {
-        let (_, best_move) = minimax(&state, 3);
+        let (_, best_move) = minimax(&state, self.depth);
         assert!(best_move.is_some());
         best_move.unwrap()
     }

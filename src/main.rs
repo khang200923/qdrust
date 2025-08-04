@@ -1,6 +1,10 @@
 mod qd;
 mod bot;
 
+use std::{time::Instant};
+use std::thread;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use clap::{Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
 use crate::bot::base::Bot;
@@ -23,6 +27,8 @@ enum Commands {
         bot_strings: Vec<String>,
         #[arg(long, default_value_t = 100)]
         num_matchups: usize,
+        #[arg(long, default_value_t = 1)]
+        num_threads: usize,
         #[arg(short, default_value_t = 32.)]
         k: f32,
     },
@@ -32,47 +38,69 @@ fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::Battle { bot_strings, num_matchups, k } => {
+        Commands::Battle { 
+            bot_strings, 
+            num_matchups, 
+            num_threads, 
+            k 
+        } => {
             let bot_zip: Vec<(Option<Box<dyn Bot>>, String)> = 
             bot_strings.clone().into_iter().map(
                     |x| (map_bot_string(&x), x.clone())
                 ).collect();
             for (bot, string) in &bot_zip {
                 if bot.is_none() {
-                    println!("\"{}\" does not exist", string);
-                    ()
-                }
+                    eprintln!("\"{}\" does not exist", string);
+                    return ();
+                } 
             }
             let bots: Vec<Box<dyn Bot>> = 
                 bot_zip.into_iter().map(
                     |(x, _)| x.expect("")
                 ).collect();
             if bots.len() <= 1 {
-                println!("You need at least 2 bots to battle");
+                eprintln!("You need at least 2 bots to battle");
                 return;
             }
                 
-            let bar = ProgressBar::new(num_matchups as u64);
+            let bar = Arc::new(ProgressBar::new(num_matchups as u64));
             bar.set_style(
-                ProgressStyle::with_template("[{elapsed_precise}] [{bar:40.cyan/blue}] {pos:>7}/{len:7} {msg}")
+                ProgressStyle::with_template("[{msg}] [{bar:40.cyan/blue}] {pos:>7}/{len:7}")
                     .unwrap()
                     .progress_chars("##-"),
             );
 
-            fn prog_func_base(_progress: usize, _num_matchups: usize, bar: &ProgressBar) {
-                bar.set_message("");
-                bar.inc(1);
+            fn prog_func_base(inc: usize, _num_matchups: usize, bar: &ProgressBar, start: &Instant) {
+                let elapsed = start.elapsed();
+                bar.set_message(format!("{:.3}s", elapsed.as_secs_f64()));
+                bar.inc(inc as u64);
             }
 
+            let start = Arc::new(Instant::now());
             let prog_func = Box::new(
-                |progress| prog_func_base(progress, num_matchups, &bar)
+                |inc| prog_func_base(inc, num_matchups, &bar, &start)
             );
+            let tournament_running = Arc::new(AtomicBool::new(true));
+            let start_clone = start.clone();
+            let bar_clone = bar.clone();
+            let tournament_running_clone = tournament_running.clone();
+            thread::spawn(move || {
+                while tournament_running_clone.load(Ordering::Relaxed) {
+                    thread::sleep(std::time::Duration::from_millis(10));
+                    let elapsed = start_clone.elapsed();
+                    bar_clone.set_message(format!("{:.3}s", elapsed.as_secs_f64()));
+                }
+            });
             let elo_scores = run_tournament(
                 bots, 
                 num_matchups, 
                 Some(k), 
+                num_threads,
                 &Some(prog_func));
             bar.finish();
+
+            let min_elo = elo_scores.iter().cloned().fold(f32::INFINITY, f32::min);
+            let elo_scores: Vec<f32> = elo_scores.into_iter().map(|elo| elo - min_elo).collect();
 
             let elo_zip = bot_strings.clone().into_iter().zip(elo_scores.into_iter());
             for (bot, elo) in elo_zip {
