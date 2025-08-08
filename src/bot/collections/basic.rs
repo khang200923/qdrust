@@ -9,12 +9,21 @@ pub struct BasicBot {
     depth: u32,
 }
 
+fn use_heuristic(state: &GameState) -> bool {
+    if state.result().is_some() { return true; }
+    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 { return true; }
+    false
+}
+
 fn heuristic(state: &GameState) -> f32 {
     if state.result() == Some(true) {
         return INFINITY;
     }
     if state.result() == Some(false) {
         return -INFINITY;
+    }
+    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 {
+        if state.is_white_turn { return INFINITY; } else { return -INFINITY; }
     }
     let white_state = GameState::new(
         Some(state.wqueen),
@@ -50,12 +59,15 @@ fn minimax_local(
     state: &GameState, 
     depth: u32, 
     alpha: f32, beta: f32,
-    ab_pruning: bool
+    ab_pruning: bool,
+    top_level: bool
 ) -> (f32, Option<u8>, bool) {
-    if depth == 0 || state.result().is_some() {
+    if (depth == 0 || use_heuristic(state)) && !top_level {
         // println!("{}: dbgg {}", depth, heuristic(state));
         return (heuristic(state), None, false);
     }
+
+    assert!((!top_level) || depth > 0);
 
     let mut alpha = alpha;
     let mut beta = beta;
@@ -67,7 +79,7 @@ fn minimax_local(
 
     for (child, move_made) in get_children(state) {
         let (mut value, _, eval_pruned) 
-            = minimax_local(&child, depth - 1, alpha, beta, ab_pruning);
+            = minimax_local(&child, depth - 1, alpha, beta, ab_pruning, false);
         if value > 0. { value -= 0.01 } else { value += 0.01 }
         if state.is_white_turn {
             if value >= best_value {
@@ -98,7 +110,8 @@ fn minimax_local(
 }
 
 fn minimax(state: &GameState, depth: u32) -> (f32, Option<u8>) {
-    let (best_value, best_move, _) = minimax_local(state, depth, -INFINITY, INFINITY, true);
+    let (best_value, best_move, _) = 
+        minimax_local(state, depth, -INFINITY, INFINITY, true, true);
     (best_value, best_move)
 }
 
