@@ -64,15 +64,15 @@ pub fn get_possible_legal_moves_info_slow(
                     break;
                 }
                 if occupancy & (1 << index) != 0 {
+                    if index == oqueen as i8 {
+                        res |= 1 << index;
+                    }
                     break;
                 }
                 res |= 1 << index;
             }
         }
     }
-
-    res |= 1 << oqueen;
-    res &= mask;
 
     res
 }

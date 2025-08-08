@@ -15,7 +15,7 @@ fn expected_score(r1: f32, r2: f32) -> f32 {
 
 fn matchable_elos(r1: f32, r2: f32) -> bool {
     let diff = (r1 - r2).abs();
-    diff < 600.0
+    diff < 800.0
 }
 
 pub fn run_tournament<'a>(

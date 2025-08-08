@@ -1,12 +1,19 @@
 mod qd;
 mod bot;
 
+use std::io;
+use std::io::{Write};
 use std::{time::Instant};
 use std::thread;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use rand::Rng;
+use regex::Regex;
 use clap::{Parser, Subcommand};
 use indicatif::{ProgressBar, ProgressStyle};
+use crate::qd::state::GameState;
+use crate::qd::legalcomp::get_possible_legal_moves;
+use crate::qd::utils::{gsvd};
 use crate::bot::base::Bot;
 use crate::bot::collections::map_bot_string;
 use crate::bot::elo::run_tournament;
@@ -21,6 +28,13 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    #[command(about = "Play against a bot")]
+    PlayBot {
+        #[arg(name = "bot", default_value = "random")]
+        bot_string: String,
+        #[arg(long, default_value = "random")]
+        color: String,
+    },
     #[command(about = "Let bots battle and get their eloes", long_about = None)]
     Battle {
         #[arg(name = "bots")]
@@ -105,6 +119,60 @@ fn main() {
             let elo_zip = bot_strings.clone().into_iter().zip(elo_scores.into_iter());
             for (bot, elo) in elo_zip {
                 println!("{}: {:.0}", bot, elo);
+            }
+        },
+        Commands::PlayBot { bot_string, color } => {
+            let bot = map_bot_string(&bot_string);
+            if bot.is_none() {
+                eprintln!("\"{}\" does not exist", bot_string);
+                return;
+            }
+            let color = color.to_lowercase();
+            let color = match color.as_str() {
+                "white" => true,
+                "black" => false,
+                "random" => {
+                    let mut rng = rand::thread_rng();
+                    rng.gen_bool(0.5)
+                },
+                _ => {
+                    eprintln!("Invalid color. Use 'white' or 'black'.");
+                    return;
+                }
+            };
+            let bot = bot.unwrap();
+            println!("You are playing against {} as {}", bot_string, if color { "white" } else { "black" });
+            let mut game = GameState::def();
+            while game.result().is_none() {
+                if game.is_white_turn != color {
+                    game.make_move(bot.decide(game.clone()));
+                    continue;
+                }
+                println!("{}", gsvd(&game));
+                let mut input = String::new();
+                let re = Regex::new(r"^[a-h][1-8]$").unwrap();
+                print!("Your move: ");
+                io::stdout().flush().unwrap();
+                io::stdin().read_line(&mut input).expect("Failed to read line");
+                input = input.trim().to_string();
+                if !re.is_match(&input) {
+                    println!("Invalid move format.");
+                    continue;
+                }
+                let file = input.chars().nth(0).unwrap() as u8 - b'a';
+                let rank = input.chars().nth(1).unwrap() as u8 - b'1';
+                let move_to = rank * 8 + file;
+                if get_possible_legal_moves(&game) & 1 << move_to == 0 {
+                    println!("Illegal move.");
+                    continue;
+                }
+                game.make_move(move_to);
+            }
+            println!("{}", gsvd(&game));
+            if game.result() == Some(color) {
+                println!("You won!");
+            } else {
+                println!("You lost.");
             }
         }
     }

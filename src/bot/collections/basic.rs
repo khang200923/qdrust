@@ -16,15 +16,21 @@ fn heuristic(state: &GameState) -> f32 {
     if state.result() == Some(false) {
         return -INFINITY;
     }
-    let score = get_possible_legal_moves(state).count_ones();
-    let oppo_state = GameState::new(
+    let white_state = GameState::new(
         Some(state.wqueen),
         Some(state.bqueen),
         Some(state.blocks),
-        Some(!state.is_white_turn),
+        Some(true),
     );
-    let oppo_score = get_possible_legal_moves(&oppo_state).count_ones();
-    score as f32 - oppo_score as f32
+    let black_state = GameState::new(
+        Some(state.wqueen),
+        Some(state.bqueen),
+        Some(state.blocks),
+        Some(false),
+    );
+    let white_score = get_possible_legal_moves(&white_state).count_ones();
+    let black_score = get_possible_legal_moves(&black_state).count_ones();
+    white_score as f32 - black_score as f32
 }
 
 fn get_children(state: &GameState) -> Vec<(GameState, u8)> {
@@ -45,9 +51,10 @@ fn minimax_local(
     depth: u32, 
     alpha: f32, beta: f32,
     ab_pruning: bool
-) -> (f32, Option<u8>) {
+) -> (f32, Option<u8>, bool) {
     if depth == 0 || state.result().is_some() {
-        return (heuristic(state), None);
+        // println!("{}: dbgg {}", depth, heuristic(state));
+        return (heuristic(state), None, false);
     }
 
     let mut alpha = alpha;
@@ -55,33 +62,44 @@ fn minimax_local(
 
     let mut best_value = if state.is_white_turn { -INFINITY } else { INFINITY };
     let mut best_move = None;
+    let mut best_move_unpruned = None;
+    let mut pruned = false;
 
     for (child, move_made) in get_children(state) {
-        let (value, _) = minimax_local(&child, depth - 1, alpha, beta, ab_pruning);
-        let value = if value > 0. { value - 0.01 } else { value + 0.01 };
+        let (mut value, _, eval_pruned) 
+            = minimax_local(&child, depth - 1, alpha, beta, ab_pruning);
+        if value > 0. { value = value - 0.01 } else { value = value + 0.01 }
         if state.is_white_turn {
             if value >= best_value {
                 best_value = value;
-                best_move = Some(move_made);
+                if !eval_pruned { best_move = Some(move_made) };
+                best_move_unpruned = Some(move_made);
             }
             alpha = alpha.max(value);
         } else {
             if value <= best_value {
                 best_value = value;
-                best_move = Some(move_made);
+                if !eval_pruned { best_move = Some(move_made) };
+                best_move_unpruned = Some(move_made);
             }
             beta = beta.min(value);
         }
         if beta <= alpha && ab_pruning {
+            pruned = true;
             break;
         }
     }
 
-    (best_value, best_move)
+    if best_move.is_none() {
+        best_move = best_move_unpruned;
+    }
+
+    (best_value, best_move, pruned)
 }
 
 fn minimax(state: &GameState, depth: u32) -> (f32, Option<u8>) {
-    minimax_local(state, depth, -INFINITY, INFINITY, true)
+    let (best_value, best_move, _) = minimax_local(state, depth, -INFINITY, INFINITY, true);
+    (best_value, best_move)
 }
 
 impl BasicBot {
@@ -92,8 +110,9 @@ impl BasicBot {
 
 impl Bot for BasicBot {
     fn decide(&self, state: GameState) -> u8 {
+        assert!(state.result().is_none());
+        assert!(self.depth > 0);
         let (_, best_move) = minimax(&state, self.depth);
-        assert!(best_move.is_some());
         best_move.unwrap()
     }
 }

@@ -1,4 +1,3 @@
-use rand::Rng;
 use crate::qd::state::GameState;
 
 fn u64_to_visual_bitboard(num: u64) -> String {
@@ -23,6 +22,9 @@ fn game_state_to_visual(state: &GameState) -> String {
             let index = rank * 8 + file;
             if state.blocks & (1 << index) != 0 {
                 board.push('#');
+            } else if state.wqueen == index as u8 && state.bqueen == index as u8 {
+                if state.is_white_turn {board.push('B');}
+                else {board.push('W');}
             } else if state.wqueen == index as u8 {
                 board.push('W');
             } else if state.bqueen == index as u8 {
@@ -33,6 +35,30 @@ fn game_state_to_visual(state: &GameState) -> String {
         }
         board.push('\n');
     }
+    board.trim_end().to_string()
+}
+
+fn game_state_to_visual_detailed(state: &GameState) -> String {
+    let mut board = String::new();
+    for rank in (0..8).rev() {
+        for file in 0..8 {
+            let index = rank * 8 + file;
+            if state.blocks & (1 << index) != 0 {
+                board.push('#');
+            } else if state.wqueen == index as u8 && state.bqueen == index as u8 {
+                if state.is_white_turn {board.push('B');}
+                else {board.push('W');}
+            } else if state.wqueen == index as u8 {
+                board.push('W');
+            } else if state.bqueen == index as u8 {
+                board.push('B');
+            } else {
+                board.push('.');
+            }
+        }
+        board.push_str(&format!(" {}\n", rank+1));
+    }
+    board.push_str("abcdefgh");
     board.trim_end().to_string()
 }
 
@@ -100,10 +126,12 @@ pub fn vbb(board: &str) -> u64 {visual_bitboard_to_u64(board)}
 pub fn vgs(state_str: &str, is_white_turn: bool) -> GameState {visual_to_game_state(state_str, is_white_turn)}
 pub fn bbv(num: u64) -> String {u64_to_visual_bitboard(num)}
 pub fn gsv(state: &GameState) -> String {game_state_to_visual(state)}
+pub fn gsvd(state: &GameState) -> String {game_state_to_visual_detailed(state)}
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
 
     #[test]
     fn test_vbb_1() {
