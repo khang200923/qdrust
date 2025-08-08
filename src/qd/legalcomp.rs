@@ -45,7 +45,6 @@ pub fn get_possible_legal_moves_info_slow(
     oqueen: u8,
     blocks: u64
 ) -> u64 {
-    let mask = get_possible_attack_mask(squeen);
     let occupancy = blocks | (1 << oqueen);
 
     let row = squeen / 8;

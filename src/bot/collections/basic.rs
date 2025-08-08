@@ -68,7 +68,7 @@ fn minimax_local(
     for (child, move_made) in get_children(state) {
         let (mut value, _, eval_pruned) 
             = minimax_local(&child, depth - 1, alpha, beta, ab_pruning);
-        if value > 0. { value = value - 0.01 } else { value = value + 0.01 }
+        if value > 0. { value -= 0.01 } else { value += 0.01 }
         if state.is_white_turn {
             if value >= best_value {
                 best_value = value;

@@ -71,6 +71,7 @@ fn minimax_local(
         let max_cost = remaining / (children.len() as u64 + 1);
         let (mut value, _, cost, eval_pruned) 
             = minimax_local(&child, max_cost, alpha, beta);
+        if value > 0. { value -= 0.01 } else { value += 0.01 }
         remaining -= cost;
         if state.is_white_turn {
             if value >= best_value {
