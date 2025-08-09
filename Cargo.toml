@@ -11,3 +11,8 @@ threadpool = "1.8.1"
 dyn-clone = "1.0.20"
 rayon = "1.10.0"
 regex = "1.11.1"
+actix-web = "4.11.0"
+serde = { version = "1.0.219", features = ["derive"] }
+tera = "1.20.0"
+actix-files = "0.6.6"
+tokio = { version = "1.47.1", features = ["full"] }

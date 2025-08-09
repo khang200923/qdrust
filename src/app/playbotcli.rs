@@ -6,7 +6,7 @@ use crate::qd::legalcomp::get_possible_legal_moves;
 use crate::qd::state::GameState;
 use crate::qd::utils::gsvd;
 
-pub fn play_bot(bot_string: String, color: String) {
+pub fn play_bot_cli(bot_string: String, color: String) {
     let bot = map_bot_string(&bot_string);
     if bot.is_none() {
         eprintln!("\"{}\" does not exist", bot_string);

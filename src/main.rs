@@ -2,9 +2,11 @@ mod qd;
 mod bot;
 mod app;
 
+use tokio;
 use clap::{Parser, Subcommand};
 use crate::app::battle::battle;
-use crate::app::playbotcli::play_bot;
+use crate::app::playbot::play_bot;
+use crate::app::playbotcli::play_bot_cli;
 
 #[derive(Parser, Debug)]
 #[command(name = "qdrust")]
@@ -16,6 +18,15 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
+    #[command(about = "Play against a bot")]
+    PlayBot {
+        #[arg(name = "bot", default_value = "random")]
+        bot_string: String,
+        #[arg(default_value_t = 8000)]
+        port: u16,
+        #[arg(default_value = "false")]
+        use_token: bool
+    },
     #[command(about = "Play against a bot (in CLI)")]
     PlayBotCli {
         #[arg(name = "bot", default_value = "random")]
@@ -36,10 +47,17 @@ enum Commands {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
+        Commands::PlayBot { bot_string, port, use_token } => {
+            play_bot(bot_string, port, use_token).await;
+        }
+        Commands::PlayBotCli { bot_string, color } => {
+            play_bot_cli(bot_string, color);
+        }
         Commands::Battle { 
             bot_strings, 
             num_matchups, 
@@ -48,8 +66,5 @@ fn main() {
         } => {
             battle(bot_strings, num_matchups, num_threads, k);
         },
-        Commands::PlayBotCli { bot_string, color } => {
-            play_bot(bot_string, color);
-        }
     }
 }
