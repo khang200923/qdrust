@@ -1,7 +1,7 @@
 use crate::qd::state::{GameState};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 
-static POSSIBLE_ATTACK_MASKS: Mutex<[u64; 64]> = Mutex::new([0; 64]);
+static POSSIBLE_ATTACK_MASKS: [OnceLock<u64>; 64] = [const { OnceLock::new() }; 64];
 
 pub fn get_possible_attack_mask_slow(queen: u8) -> u64 {
     let mut mask: u64 = 0;
@@ -33,11 +33,10 @@ pub fn get_possible_attack_mask_slow(queen: u8) -> u64 {
 }
 
 pub fn get_possible_attack_mask(queen: u8) -> u64 {
-    let mut pcomp = POSSIBLE_ATTACK_MASKS.lock().unwrap();
-    if pcomp[queen as usize] == 0 {
-        pcomp[queen as usize] = get_possible_attack_mask_slow(queen);
-    }
-    pcomp[queen as usize]
+    let target = &POSSIBLE_ATTACK_MASKS[queen as usize];
+    *target.get_or_init(|| {
+        get_possible_attack_mask_slow(queen)
+    })
 }
 
 pub fn get_possible_legal_moves_info_slow(
@@ -142,7 +141,40 @@ mod tests {
             ....###.
             ...#.#.#
             ..#..#..
-        "))
+        "));
+        let mask = get_possible_attack_mask(4);
+        assert_eq!(mask, vbb("
+            ....#...
+            ....#...
+            ....#...
+            #...#...
+            .#..#..#
+            ..#.#.#.
+            ...###..
+            ####.###
+        "));
+        let mask = get_possible_attack_mask(59);
+        assert_eq!(mask, vbb("
+            ###.####
+            ..###...
+            .#.#.#..
+            #..#..#.
+            ...#...#
+            ...#....
+            ...#....
+            ...#....
+        "));
+        let mask = get_possible_attack_mask(8 * 3 + 5);
+        assert_eq!(mask, vbb("
+            .#...#..
+            ..#..#..
+            ...#.#.#
+            ....###.
+            #####.##
+            ....###.
+            ...#.#.#
+            ..#..#..
+        "));
     }
 
     #[test]
