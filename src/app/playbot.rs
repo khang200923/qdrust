@@ -1,7 +1,6 @@
-use rand::{random, thread_rng, Rng};
+use rand::{thread_rng, Rng};
 use include_dir::{include_dir, Dir};
 use tera::{Tera, Context};
-use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use serde::{Deserialize, Serialize};
 use crate::qd::state::GameState;
@@ -91,8 +90,7 @@ async fn bot_endpoint(
 
 async fn index_endpoint(
     data: web::Data<AppData>,
-    info: web::Query<Info>,
-    req: HttpRequest
+    info: web::Query<Info>
 ) -> impl Responder {
     let token = info.token.clone();
     if token.is_none() && data.use_token {

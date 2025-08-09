@@ -1,5 +1,5 @@
 use crate::qd::state::{GameState};
-use std::sync::{Mutex, OnceLock};
+use std::sync::OnceLock;
 
 static POSSIBLE_ATTACK_MASKS: [OnceLock<u64>; 64] = [const { OnceLock::new() }; 64];
 

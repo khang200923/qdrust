@@ -1,5 +1,6 @@
 use crate::qd::state::GameState;
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn u64_to_visual_bitboard(num: u64) -> String {
     let mut board = String::new();
     for rank in (0..8).rev() {
@@ -15,6 +16,7 @@ fn u64_to_visual_bitboard(num: u64) -> String {
     board.trim_end().to_string()
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn game_state_to_visual(state: &GameState) -> String {
     let mut board = String::new();
     for rank in (0..8).rev() {
@@ -38,6 +40,7 @@ fn game_state_to_visual(state: &GameState) -> String {
     board.trim_end().to_string()
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn game_state_to_visual_detailed(state: &GameState) -> String {
     let mut board = String::new();
     for rank in (0..8).rev() {
@@ -62,6 +65,7 @@ fn game_state_to_visual_detailed(state: &GameState) -> String {
     board.trim_end().to_string()
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn visual_bitboard_to_u64(board: &str) -> u64 {
     let mut bitboard = 0u64;
     let lines = board.lines();
@@ -87,6 +91,7 @@ fn visual_bitboard_to_u64(board: &str) -> u64 {
     bitboard
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 fn visual_to_game_state(state_str: &str, is_white_turn: bool) -> GameState {
     let mut wqueen: Option<u8> = None;
     let mut bqueen: Option<u8> = None;
@@ -122,10 +127,15 @@ fn visual_to_game_state(state_str: &str, is_white_turn: bool) -> GameState {
     GameState::new(wqueen, bqueen, Some(blocks), Some(is_white_turn))
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn vbb(board: &str) -> u64 {visual_bitboard_to_u64(board)}
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn vgs(state_str: &str, is_white_turn: bool) -> GameState {visual_to_game_state(state_str, is_white_turn)}
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn bbv(num: u64) -> String {u64_to_visual_bitboard(num)}
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn gsv(state: &GameState) -> String {game_state_to_visual(state)}
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn gsvd(state: &GameState) -> String {game_state_to_visual_detailed(state)}
 
 #[cfg(test)]

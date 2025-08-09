@@ -53,7 +53,8 @@ async fn main() {
 
     match cli.command {
         Commands::PlayBot { bot_string, port, use_token } => {
-            play_bot(bot_string, port, use_token).await;
+            play_bot(bot_string, port, use_token).await
+                .expect("Failed to start bot server");
         }
         Commands::PlayBotCli { bot_string, color } => {
             play_bot_cli(bot_string, color);
