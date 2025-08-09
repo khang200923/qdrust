@@ -4,7 +4,7 @@ use crate::qd::state::GameState;
 use crate::qd::legalcomp::{get_possible_legal_moves};
 
 #[derive(Clone)]
-pub struct RandomBot;
+pub struct RandomBot {}
 
 fn random_set_bit_index(bitboard: u64) -> Option<u32> {
     let popcnt = bitboard.count_ones();
@@ -21,6 +21,12 @@ fn random_set_bit_index(bitboard: u64) -> Option<u32> {
     }
 
     Some(n.trailing_zeros())
+}
+
+impl RandomBot {
+    pub fn new() -> Self {
+        Self {}
+    }
 }
 
 impl Bot for RandomBot {
@@ -47,7 +53,7 @@ mod tests {
     fn test_always_legal() {
         for _ in 0..1000 {
             let mut state = GameState::def();
-            let bot = RandomBot;
+            let bot = RandomBot::new();
 
             while let None = state.result() {
                 let move_to = bot.decide(state);
