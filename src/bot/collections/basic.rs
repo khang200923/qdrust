@@ -1,6 +1,6 @@
 use crate::bot::base::Bot;
 use crate::qd::state::{GameState};
-use crate::qd::legalcomp::{get_possible_legal_moves};
+use crate::qd::legalcomp::{get_possible_attack_mask, get_possible_legal_moves};
 
 const INFINITY: f32 = 1e6;
 
@@ -9,9 +9,17 @@ pub struct BasicBot {
     depth: u32,
 }
 
+fn queens_in_reach(state: &GameState) -> bool {
+    if (get_possible_attack_mask(state.wqueen) | get_possible_attack_mask(state.bqueen))
+    & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 {
+        if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 { return true; }
+    }
+    false
+}
+
 fn use_heuristic(state: &GameState) -> bool {
     if state.result().is_some() { return true; }
-    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 { return true; }
+    if queens_in_reach(state) { return true; }
     false
 }
 
@@ -22,7 +30,7 @@ fn heuristic(state: &GameState) -> f32 {
     if state.result() == Some(false) {
         return -INFINITY;
     }
-    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 {
+    if queens_in_reach(state) {
         if state.is_white_turn { return INFINITY; } else { return -INFINITY; }
     }
     let white_state = GameState::new(
