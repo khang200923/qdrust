@@ -1,4 +1,5 @@
 use rand::{random, thread_rng, Rng};
+use include_dir::{include_dir, Dir};
 use tera::{Tera, Context};
 use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
@@ -6,6 +7,9 @@ use serde::{Deserialize, Serialize};
 use crate::qd::state::GameState;
 use crate::bot::base::Bot;
 use crate::bot::collections::map_bot_string;
+
+static STATIC_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/assets/static");
+static INDEX_FILE: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/assets/index.html.tera"));
 
 struct AppData {
     bot: Box<dyn Bot>,
@@ -99,8 +103,25 @@ async fn index_endpoint(
     }
     let mut context = Context::new();
     context.insert("token", &data.token);
-    let rendered = data.tera.render("index.html.tera", &context).unwrap();
+    let rendered = data.tera.render("index", &context).unwrap();
     HttpResponse::Ok().body(rendered)
+}
+
+async fn serve_static(req: HttpRequest) -> impl Responder {
+    let path = req.path().strip_prefix("/static/").unwrap().trim_start_matches("/");
+
+    match STATIC_DIR.get_file(path) {
+        Some(file) => {
+            let body = file.contents();
+
+            let content_type = mime_guess::from_path(path).first_or_octet_stream();
+
+            HttpResponse::Ok()
+                .content_type(content_type.as_ref())
+                .body(body)
+        }
+        None => HttpResponse::NotFound().body("File not found"),
+    }
 }
 
 pub async fn play_bot(bot_string: String, port: u16, use_token: bool) -> std::io::Result<()> {
@@ -112,7 +133,9 @@ pub async fn play_bot(bot_string: String, port: u16, use_token: bool) -> std::io
     }
     let bot = bot.unwrap();
     
-    let tera = Tera::new("assets/**/*").unwrap();
+    let mut tera = Tera::default();
+    tera.add_raw_template("index", INDEX_FILE)
+        .expect("Failed to add template");
     let app = {
         let token = token.clone();
         move || {
@@ -125,7 +148,7 @@ pub async fn play_bot(bot_string: String, port: u16, use_token: bool) -> std::io
                 }))
                 .route("/", web::get().to(index_endpoint))
                 .route("/index.html", web::get().to(index_endpoint))
-                .service(fs::Files::new("/static", "./assets/static"))
+                .route("/static/{filename:.*}", web::get().to(serve_static))
                 .route("/bot", web::post().to(bot_endpoint))
         }
     };
