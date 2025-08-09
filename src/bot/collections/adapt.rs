@@ -9,12 +9,21 @@ pub struct AdaptiveBot {
     max_compute: u64
 }
 
+fn use_heuristic(state: &GameState) -> bool {
+    if state.result().is_some() { return true; }
+    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 { return true; }
+    false
+}
+
 fn heuristic(state: &GameState) -> f32 {
     if state.result() == Some(true) {
         return INFINITY;
     }
     if state.result() == Some(false) {
         return -INFINITY;
+    }
+    if get_possible_legal_moves(state) & (1u64 << state.wqueen | 1u64 << state.bqueen) != 0 {
+        if state.is_white_turn { return INFINITY; } else { return -INFINITY; }
     }
     let white_state = GameState::new(
         Some(state.wqueen),
@@ -49,10 +58,11 @@ fn get_children(state: &GameState) -> Vec<(GameState, u8)> {
 fn minimax_local(
     state: &GameState, 
     max_compute: u64, 
-    alpha: f32, beta: f32
+    alpha: f32, beta: f32,
+    top_level: bool
 ) -> (f32, Option<u8>, u64, bool) {
-    if max_compute <= 1 || state.result().is_some() {
-        return (heuristic(state), None, max_compute, false)
+    if (max_compute == 0 || use_heuristic(state)) && !top_level {
+        return (heuristic(state), None, max_compute, false);
     }
 
     let mut alpha = alpha;
@@ -70,7 +80,7 @@ fn minimax_local(
     while let Some((child, move_made)) = children.pop() {
         let max_cost = remaining / (children.len() as u64 + 1);
         let (mut value, _, cost, eval_pruned) 
-            = minimax_local(&child, max_cost, alpha, beta);
+            = minimax_local(&child, max_cost, alpha, beta, false);
         if value > 0. { value -= 0.01 } else { value += 0.01 }
         remaining -= cost;
         if state.is_white_turn {
@@ -102,7 +112,8 @@ fn minimax_local(
 }
 
 fn minimax(state: &GameState, max_compute: u64) -> (f32, Option<u8>, u64) {
-    let (best_value, best_move, remaining, _) = minimax_local(state, max_compute, -INFINITY, INFINITY);
+    let (best_value, best_move, remaining, _) = 
+        minimax_local(state, max_compute, -INFINITY, INFINITY, true);
     (best_value, best_move, remaining)
 }
 
