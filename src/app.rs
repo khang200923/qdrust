@@ -1,2 +1,2 @@
 pub mod battle;
-pub mod playbot;
+pub mod playbotcli;

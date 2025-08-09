@@ -4,7 +4,7 @@ mod app;
 
 use clap::{Parser, Subcommand};
 use crate::app::battle::battle;
-use crate::app::playbot::play_bot;
+use crate::app::playbotcli::play_bot;
 
 #[derive(Parser, Debug)]
 #[command(name = "qdrust")]
@@ -16,8 +16,8 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    #[command(about = "Play against a bot")]
-    PlayBot {
+    #[command(about = "Play against a bot (in CLI)")]
+    PlayBotCli {
         #[arg(name = "bot", default_value = "random")]
         bot_string: String,
         #[arg(long, default_value = "random")]
@@ -48,7 +48,7 @@ fn main() {
         } => {
             battle(bot_strings, num_matchups, num_threads, k);
         },
-        Commands::PlayBot { bot_string, color } => {
+        Commands::PlayBotCli { bot_string, color } => {
             play_bot(bot_string, color);
         }
     }
