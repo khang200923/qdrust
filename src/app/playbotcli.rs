@@ -1,28 +1,24 @@
 use std::io::{self, Write};
 use rand::Rng;
 use regex::Regex;
+use crate::app::enums::ColorMode;
 use crate::bot::collections::map_bot_string;
 use crate::qd::legalcomp::get_possible_legal_moves;
 use crate::qd::state::GameState;
 use crate::qd::utils::gsvd;
 
-pub fn play_bot_cli(bot_string: String, color: String) {
+pub fn play_bot_cli(bot_string: String, color: ColorMode) {
     let bot = map_bot_string(&bot_string);
     if bot.is_none() {
         eprintln!("\"{}\" does not exist", bot_string);
         return;
     }
-    let color = color.to_lowercase();
-    let color = match color.as_str() {
-        "white" => true,
-        "black" => false,
-        "random" => {
+    let color = match color {
+        ColorMode::White => true,
+        ColorMode::Black => false,
+        ColorMode::Random => {
             let mut rng = rand::thread_rng();
             rng.gen_bool(0.5)
-        },
-        _ => {
-            eprintln!("Invalid color. Use 'white' or 'black'.");
-            return;
         }
     };
     let bot = bot.unwrap();

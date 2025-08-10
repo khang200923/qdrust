@@ -4,6 +4,7 @@ mod app;
 
 use tokio;
 use clap::{Parser, Subcommand};
+use crate::app::enums::ColorMode;
 use crate::app::battle::battle;
 use crate::app::playbot::play_bot;
 use crate::app::playbotcli::play_bot_cli;
@@ -20,19 +21,21 @@ struct Cli {
 enum Commands {
     #[command(about = "Play against a bot")]
     PlayBot {
-        #[arg(name = "bot", default_value = "random")]
+        #[arg(name = "BOT", default_value = "random")]
         bot_string: String,
         #[arg(default_value_t = 8000)]
         port: u16,
-        #[arg(default_value = "false")]
-        use_token: bool
+        #[arg(long, help = "Use a randomly generated token for security", default_value = "false")]
+        use_token: bool,
+        #[arg(long, help = "Automatically open the browser", default_value = "false")]
+        open_browser: bool,
     },
     #[command(about = "Play against a bot (in CLI)")]
     PlayBotCli {
-        #[arg(name = "bot", default_value = "random")]
+        #[arg(name = "BOT", default_value = "random")]
         bot_string: String,
-        #[arg(long, default_value = "random")]
-        color: String,
+        #[arg(long, default_value_t = ColorMode::Random)]
+        color: ColorMode,
     },
     #[command(about = "Let bots battle and get their eloes", long_about = None)]
     Battle {
@@ -52,8 +55,8 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.command {
-        Commands::PlayBot { bot_string, port, use_token } => {
-            play_bot(bot_string, port, use_token).await
+        Commands::PlayBot { bot_string, port, use_token, open_browser } => {
+            play_bot(bot_string, port, use_token, open_browser).await
                 .expect("Failed to start bot server");
         }
         Commands::PlayBotCli { bot_string, color } => {

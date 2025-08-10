@@ -122,7 +122,12 @@ async fn serve_static(req: HttpRequest) -> impl Responder {
     }
 }
 
-pub async fn play_bot(bot_string: String, port: u16, use_token: bool) -> std::io::Result<()> {
+pub async fn play_bot(
+    bot_string: String, 
+    port: u16, 
+    use_token: bool,
+    open_browser: bool
+) -> std::io::Result<()> {
     let token = random_hex_string(16);
     let bot = map_bot_string(&bot_string);
     if bot.is_none() {
@@ -150,10 +155,18 @@ pub async fn play_bot(bot_string: String, port: u16, use_token: bool) -> std::io
                 .route("/bot", web::post().to(bot_endpoint))
         }
     };
-    if use_token {
-        println!("Access at localhost:{}/?token={}", port, token);
+    let access_url = if use_token {
+        format!("http://localhost:{}/?token={}", port, token)
     } else {
-        println!("Access at localhost:{}", port);
+        format!("http://localhost:{}", port)
+    };
+    println!("You are playing against {} as white", bot_string);
+    println!("Access at");
+    println!("      {}", access_url);
+    if open_browser {
+        webbrowser::open(&access_url).unwrap_or_else(|_| {
+            eprintln!("Failed to open web browser. Please visit {}", access_url);
+        });
     }
     HttpServer::new(app)
         .bind(("127.0.0.1", port))?
