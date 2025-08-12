@@ -13,19 +13,29 @@ fn expected_score(r1: f32, r2: f32) -> f32 {
     1.0 / (1.0 + 10f32.powf((r2 - r1) / 400.0))
 }
 
-fn matchable_elos(r1: f32, r2: f32) -> bool {
+fn matchable_elos(r1: f32, r2: f32, k: f32) -> bool {
     let diff = (r1 - r2).abs();
-    diff < 800.0
+    diff < f32::max(600.0, k * 6.)
+}
+
+fn get_computed_k(
+    k_start: f32,
+    k_end: f32,
+    progress: f32
+) -> f32 {
+    assert!(0. <= progress);
+    assert!(progress <= 1.);
+    k_start * (k_end / k_start).powf(progress)
 }
 
 pub fn run_tournament<'a>(
     bots: Vec<Box<dyn Bot>>,
     num_matchups: usize,
-    k: Option<f32>,
+    k_start: f32,
+    k_end: f32,
     num_threads: usize,
     prog_func: &Option<Box<dyn Fn(usize) + 'a>>
 ) -> Vec<f32> {
-    let k = k.unwrap_or(32.0);
     let bots = Arc::new(bots);
     let mut elos = vec![0.0f32; bots.len()];
     let pool = ThreadPoolBuilder::new()
@@ -34,7 +44,7 @@ pub fn run_tournament<'a>(
         .unwrap();
     let mut remaining = num_matchups;
 
-    let matchup_func = |elos: &Vec<f32>| {
+    let matchup_func = |elos: &Vec<f32>, k: f32| {
         let mut rng = rand::thread_rng();
         let i = rng.gen_range(0..bots.len());
         let mut chosen_bots = (0..bots.len())
@@ -42,7 +52,7 @@ pub fn run_tournament<'a>(
                 |j| {
                     let elo_i = (elos)[i];
                     let elo_j = (elos)[*j];
-                    *j != i && matchable_elos(elo_i, elo_j)
+                    *j != i && matchable_elos(elo_i, elo_j, k)
                 }
             )
             .collect::<Vec<_>>();
@@ -57,10 +67,12 @@ pub fn run_tournament<'a>(
     };
 
     while remaining > 0 {
+        let progress = 1.0 - remaining as f32 / num_matchups as f32;
+        let k = get_computed_k(k_start, k_end, progress);
         let mut inp = vec![(0usize, 0usize); 0];
         let mut remaining_batch = num_threads * 4;
         while remaining_batch > 0 && remaining > 0 {
-            inp.push(matchup_func(&elos));
+            inp.push(matchup_func(&elos, k));
             remaining_batch -= 1;
             remaining -= 1;
         };
@@ -74,6 +86,9 @@ pub fn run_tournament<'a>(
                 .collect::<Vec<_>>()
         });
         for (i, j, does_b1_win) in out {
+            let progress = 1.0 - remaining as f32 / num_matchups as f32;
+            let k = get_computed_k(k_start, k_end, progress);
+
             let b1_elo = elos[i];
             let b2_elo = elos[j];
 

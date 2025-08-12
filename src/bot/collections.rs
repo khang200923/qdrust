@@ -9,8 +9,8 @@ pub fn map_bot_string(name: &str) -> Option<Box<dyn Bot>> {
     if name == "random" { Some(Box::new(random::RandomBot::new())) } 
     else if let Some(num) = name.strip_prefix("weak") {
         if let Ok(n) = num.parse::<u32>() {
-            if n == 0 { return None; }
-            return Some(Box::new(weak::WeakBot::new(n)));
+            if n > 10 { return None; }
+            return Some(Box::new(weak::WeakBot::new(n as f64 / 10.)));
         }
         None
     }

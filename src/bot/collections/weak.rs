@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 use crate::bot::base::Bot;
 use crate::qd::state::{GameState};
 use crate::qd::legalcomp::{get_possible_legal_moves};
@@ -6,7 +7,7 @@ const INFINITY: f32 = 1e6;
 
 #[derive(Clone)]
 pub struct WeakBot {
-    depth: u32,
+    level: f64,
 }
 
 fn use_heuristic(state: &GameState) -> bool {
@@ -111,14 +112,19 @@ fn minimax(state: &GameState, depth: u32) -> (f32, Option<u8>) {
 }
 
 impl WeakBot {
-    pub fn new(depth: u32) -> Self {
-        Self { depth }
+    pub fn new(level: f64) -> Self {
+        assert!(0. <= level);
+        assert!(level <= 1.);
+        Self { level }
     }
 }
 
 impl Bot for WeakBot {
     fn decide(&self, state: GameState) -> u8 {
-        let (_, best_move) = minimax(&state, self.depth);
-        best_move.unwrap()
+        let (_, best_move_1) = minimax(&state, 1);
+        let (_, best_move_2) = minimax(&state, 2);
+        let mut rng = thread_rng();
+        let choose: bool = rng.gen_bool(self.level);
+        if choose { best_move_2.unwrap() } else { best_move_1.unwrap() }
     }
 }

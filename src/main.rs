@@ -45,8 +45,12 @@ enum Commands {
         num_matchups: usize,
         #[arg(long, default_value_t = 1)]
         num_threads: usize,
-        #[arg(short, default_value_t = 32.)]
-        k: f32,
+        #[arg(long, default_value_t = 32.)]
+        k_start: f32,
+        #[arg(long, default_value_t = 32.)]
+        k_end: f32,
+        #[arg(long, default_value_t = false)]
+        sorted: bool,
     },
 }
 
@@ -66,9 +70,11 @@ async fn main() {
             bot_strings, 
             num_matchups, 
             num_threads, 
-            k 
+            k_start,
+            k_end,
+            sorted,
         } => {
-            battle(bot_strings, num_matchups, num_threads, k);
+            battle(bot_strings, num_matchups, num_threads, k_start, k_end, sorted);
         },
     }
 }
