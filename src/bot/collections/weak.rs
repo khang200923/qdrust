@@ -102,6 +102,10 @@ fn minimax_local(
         best_move = best_move_unpruned;
     }
 
+    let mut rng = thread_rng();
+    let noise: f32 = rng.gen_range(-0.001..0.001);
+    best_value += noise;
+
     (best_value, best_move, pruned)
 }
 

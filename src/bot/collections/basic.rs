@@ -1,3 +1,4 @@
+use rand::{thread_rng, Rng};
 use crate::bot::base::Bot;
 use crate::qd::state::{GameState};
 use crate::qd::legalcomp::{get_possible_attack_mask, get_possible_legal_moves};
@@ -113,6 +114,10 @@ fn minimax_local(
     if best_move.is_none() {
         best_move = best_move_unpruned;
     }
+
+    let mut rng = thread_rng();
+    let noise: f32 = rng.gen_range(-0.001..0.001);
+    best_value += noise;
 
     (best_value, best_move, pruned)
 }
