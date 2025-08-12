@@ -111,3 +111,72 @@ pub fn run_tournament<'a>(
 
     elos
 }
+
+pub fn run_benchmark<'a>(
+    bot: Box<dyn Bot>,
+    oppo_bots: Vec<Box<dyn Bot>>,
+    num_matchups: usize,
+    oppo_elos: Vec<f32>,
+    k_start: f32,
+    k_end: f32,
+    num_threads: usize,
+    prog_func: &Option<Box<dyn Fn(usize) + 'a>>
+) -> f32 {
+    let oppo_bots = Arc::new(oppo_bots);
+    let oppo_elos = Arc::new(oppo_elos);
+    let mut elo = 0.0f32;
+    let pool = ThreadPoolBuilder::new()
+        .num_threads(num_threads)
+        .build()
+        .unwrap();
+    let mut remaining = num_matchups;
+
+    let matchup_func = |elo: f32, k: f32| {
+        let mut rng = rand::thread_rng();
+        let mut chosen_bots = (0..oppo_bots.len())
+            .filter(
+                |j| matchable_elos(elo, oppo_elos[*j], k)
+            )
+            .collect::<Vec<_>>();
+        if chosen_bots.len() == 0 {
+            chosen_bots = (0..oppo_bots.len()).collect::<Vec<_>>();
+        }
+        let j_chosen = rng.gen_range(0..chosen_bots.len());
+        let j = chosen_bots[j_chosen];
+        j
+    };
+
+    while remaining > 0 {
+        let progress = 1.0 - remaining as f32 / num_matchups as f32;
+        let k = get_computed_k(k_start, k_end, progress);
+        let mut inp = vec![0usize; 0];
+        let mut remaining_batch = num_threads * 4;
+        while remaining_batch > 0 && remaining > 0 {
+            inp.push(matchup_func(elo, k));
+            remaining_batch -= 1;
+            remaining -= 1;
+        };
+        let out = pool.install(|| {
+            inp.into_par_iter()
+                .map(|j| {
+                    let b2 = &oppo_bots[j];
+                    (j, bots_fight_rand(bot.as_ref(), b2.as_ref()))
+                })
+                .collect::<Vec<_>>()
+        });
+        for (j, does_bot_win) in out {
+            let progress = 1.0 - remaining as f32 / num_matchups as f32;
+            let k = get_computed_k(k_start, k_end, progress);
+
+            let bot_win_prob = expected_score(elo, oppo_elos[j]);
+            let bot_score = if does_bot_win { 1.0 } else { 0.0 };
+            let bot_new = elo + k * (bot_score - bot_win_prob);
+            elo = bot_new;
+        }
+        if prog_func.is_some() {
+            prog_func.as_ref().unwrap()(num_threads * 4);
+        }
+    };
+
+    elo
+}

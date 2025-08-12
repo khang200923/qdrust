@@ -53,16 +53,18 @@ pub fn battle(
         |inc| prog_func_base(inc, num_matchups, &bar, &start)
     );
     let tournament_running = Arc::new(AtomicBool::new(true));
-    let start_clone = start.clone();
-    let bar_clone = bar.clone();
-    let tournament_running_clone = tournament_running.clone();
-    thread::spawn(move || {
-        while tournament_running_clone.load(Ordering::Relaxed) {
-            thread::sleep(std::time::Duration::from_millis(10));
-            let elapsed = start_clone.elapsed();
-            bar_clone.set_message(format!("{:.3}s", elapsed.as_secs_f64()));
-        }
-    });
+    {    
+        let start = start.clone();
+        let bar = bar.clone();
+        let tournament_running = tournament_running.clone();
+        thread::spawn(move || {
+            while tournament_running.load(Ordering::Relaxed) {
+                thread::sleep(std::time::Duration::from_millis(10));
+                let elapsed = start.elapsed();
+                bar.set_message(format!("{:.3}s", elapsed.as_secs_f64()));
+            }
+        });
+    }
     let elo_scores = run_tournament(
         bots, 
         num_matchups, 

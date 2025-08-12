@@ -5,6 +5,7 @@ mod app;
 use tokio;
 use clap::{Parser, Subcommand};
 use crate::app::enums::ColorMode;
+use crate::app::benchmark::benchmark;
 use crate::app::battle::battle;
 use crate::app::playbot::play_bot;
 use crate::app::playbotcli::play_bot_cli;
@@ -39,7 +40,7 @@ enum Commands {
     },
     #[command(about = "Let bots battle and get their eloes", long_about = None)]
     Battle {
-        #[arg(name = "bots")]
+        #[arg(name = "BOTS")]
         bot_strings: Vec<String>,
         #[arg(long, default_value_t = 100)]
         num_matchups: usize,
@@ -52,6 +53,19 @@ enum Commands {
         #[arg(long, default_value_t = false)]
         sorted: bool,
     },
+    #[command(about = "Benchmark a bot")]
+    Benchmark {
+        #[arg(name = "BOT", default_value = "random")]
+        bot_string: String,
+        #[arg(long, default_value_t = 100)]
+        num_matchups: usize,
+        #[arg(long, default_value_t = 1)]
+        num_threads: usize,
+        #[arg(long, default_value_t = 32.)]
+        k_start: f32,
+        #[arg(long, default_value_t = 32.)]
+        k_end: f32,
+    }
 }
 
 #[tokio::main]
@@ -75,6 +89,15 @@ async fn main() {
             sorted,
         } => {
             battle(bot_strings, num_matchups, num_threads, k_start, k_end, sorted);
-        },
+        }
+        Commands::Benchmark {
+            bot_string, 
+            num_matchups, 
+            num_threads,
+            k_start,
+            k_end,
+        } => {
+            benchmark(bot_string, num_matchups, num_threads, k_start, k_end);
+        }
     }
 }

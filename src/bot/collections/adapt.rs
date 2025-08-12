@@ -1,3 +1,4 @@
+use std::cmp::min;
 use crate::bot::base::Bot;
 use crate::qd::state::{GameState};
 use crate::qd::legalcomp::{get_possible_attack_mask, get_possible_legal_moves};
@@ -86,7 +87,7 @@ fn minimax_local(
     let mut children = get_children(state);
 
     while let Some((child, move_made)) = children.pop() {
-        let max_cost = remaining / (children.len() as u64 + 1);
+        let max_cost = min(remaining / (children.len() as u64 + 1) * 5 / 4, remaining);
         let (mut value, _, cost, eval_pruned) 
             = minimax_local(&child, max_cost, alpha, beta, false);
         if value > 0. { value -= 0.01 } else { value += 0.01 }
@@ -134,6 +135,7 @@ impl AdaptiveBot {
 impl Bot for AdaptiveBot {
     fn decide(&self, state: GameState) -> u8 {
         let (_, best_move, _) = minimax(&state, self.max_compute);
+        // println!("dbg {} {:.3}", a, (b as f64) / (self.max_compute as f64));
         best_move.unwrap()
     }
 }

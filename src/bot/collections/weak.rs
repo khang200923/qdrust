@@ -124,7 +124,7 @@ impl Bot for WeakBot {
         let (_, best_move_1) = minimax(&state, 1);
         let (_, best_move_2) = minimax(&state, 2);
         let mut rng = thread_rng();
-        let choose: bool = rng.gen_bool(self.level);
+        let choose: bool = rng.gen_bool(self.level.sqrt());
         if choose { best_move_2.unwrap() } else { best_move_1.unwrap() }
     }
 }
