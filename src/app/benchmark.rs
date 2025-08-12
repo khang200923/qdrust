@@ -14,20 +14,6 @@ enum Exception {
 }
 
 fn buffer_to_oppo_bots_elos(buffer: &str) -> Result<(Vec<Box<dyn Bot>>, Vec<f32>), Exception> {
-    // example of such a buffer:
-    // random: 0
-    // weak0: 385
-    // weak5: 609
-    // weak10: 978
-    // basic1: 988
-    // basic2: 974
-    // basic3: 1276
-    // adapt1: 1332
-    // adapt2: 1365
-    // adapt3: 1403
-    // adapt4: 1511
-    // ...
-
     let mut oppo_bots = Vec::new();
     let mut elos = Vec::new();
     for line in buffer.lines() {
