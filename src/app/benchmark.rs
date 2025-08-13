@@ -13,14 +13,14 @@ enum Exception {
     InvalidBuffer
 }
 
-fn buffer_to_oppo_bots_elos(buffer: &str) -> Result<(Vec<Box<dyn Bot>>, Vec<f32>), Exception> {
+fn buffer_to_oppo_bots_elos(buffer: &str) -> Result<(Vec<Box<dyn Bot>>, Vec<f64>), Exception> {
     let mut oppo_bots = Vec::new();
     let mut elos = Vec::new();
     for line in buffer.lines() {
         let mut parts = line.split(':');
         let name = parts.next().ok_or(Exception::InvalidBuffer)?;
         let elo_str = parts.next().ok_or(Exception::InvalidBuffer)?;
-        let elo: f32 = elo_str.trim().parse().map_err(|_| Exception::InvalidBuffer)?;
+        let elo: f64 = elo_str.trim().parse().map_err(|_| Exception::InvalidBuffer)?;
 
         if let Some(bot) = map_bot_string(name) {
             oppo_bots.push(bot);
@@ -37,8 +37,8 @@ pub fn benchmark(
     bot_string: String,
     num_matchups: usize,
     num_threads: usize,
-    k_start: f32,
-    k_end: f32,
+    k_start: f64,
+    k_end: f64,
 ) {
     let mut buffer = String::new();
     let res = io::stdin().read_to_string(&mut buffer);

@@ -12,8 +12,8 @@ pub fn battle(
     bot_strings: Vec<String>, 
     num_matchups: usize, 
     num_threads: usize, 
-    k_start: f32,
-    k_end: f32,
+    k_start: f64,
+    k_end: f64,
     sorted: bool,
 ) {
     let bot_zip: Vec<(Option<Box<dyn Bot>>, String)> = 
@@ -74,10 +74,10 @@ pub fn battle(
         &Some(prog_func));
     bar.finish();
 
-    let min_elo = elo_scores.iter().cloned().fold(f32::INFINITY, f32::min);
-    let elo_scores: Vec<f32> = elo_scores.into_iter().map(|elo| elo - min_elo).collect();
+    let min_elo = elo_scores.iter().cloned().fold(f64::INFINITY, f64::min);
+    let elo_scores: Vec<f64> = elo_scores.into_iter().map(|elo| elo - min_elo).collect();
 
-    let mut elo_zip: Vec<(String, f32)> = bot_strings.clone().into_iter().zip(elo_scores.into_iter()).collect();
+    let mut elo_zip: Vec<(String, f64)> = bot_strings.clone().into_iter().zip(elo_scores.into_iter()).collect();
     if sorted {
         elo_zip.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
     }

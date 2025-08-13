@@ -47,9 +47,9 @@ enum Commands {
         #[arg(long, default_value_t = 1)]
         num_threads: usize,
         #[arg(long, default_value_t = 32.)]
-        k_start: f32,
+        k_start: f64,
         #[arg(long, default_value_t = 32.)]
-        k_end: f32,
+        k_end: f64,
         #[arg(long, default_value_t = false)]
         sorted: bool,
     },
@@ -62,9 +62,9 @@ enum Commands {
         #[arg(long, default_value_t = 1)]
         num_threads: usize,
         #[arg(long, default_value_t = 32.)]
-        k_start: f32,
+        k_start: f64,
         #[arg(long, default_value_t = 32.)]
-        k_end: f32,
+        k_end: f64,
     }
 }
 

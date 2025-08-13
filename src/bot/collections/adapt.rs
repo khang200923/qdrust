@@ -6,7 +6,7 @@ use crate::bot::base::Bot;
 use crate::qd::state::{GameState};
 use crate::qd::legalcomp::{get_possible_attack_mask, get_possible_legal_moves};
 
-const INFINITY: f32 = 1e6;
+const INFINITY: f64 = 1e6;
 
 #[derive(Clone)]
 pub struct AdaptiveBot {
@@ -27,7 +27,7 @@ fn use_heuristic(state: &GameState) -> bool {
     false
 }
 
-fn heuristic(state: &GameState) -> f32 {
+fn heuristic(state: &GameState) -> f64 {
     if state.result() == Some(true) {
         return INFINITY;
     }
@@ -51,7 +51,7 @@ fn heuristic(state: &GameState) -> f32 {
     );
     let white_score = get_possible_legal_moves(&white_state).count_ones();
     let black_score = get_possible_legal_moves(&black_state).count_ones();
-    white_score as f32 - black_score as f32
+    white_score as f64 - black_score as f64
 }
 
 fn get_children(state: &GameState) -> Vec<(GameState, u8)> {
@@ -72,9 +72,9 @@ fn get_children(state: &GameState) -> Vec<(GameState, u8)> {
 fn minimax_local(
     state: &GameState, 
     max_compute: u64, 
-    alpha: f32, beta: f32,
+    alpha: f64, beta: f64,
     top_level: bool
-) -> (f32, Option<u8>, u64, bool) {
+) -> (f64, Option<u8>, u64, bool) {
     if (max_compute == 0 || use_heuristic(state)) && !top_level {
         return (heuristic(state), None, max_compute, false);
     }
@@ -123,13 +123,13 @@ fn minimax_local(
     }
 
     let mut rng = thread_rng();
-    let noise: f32 = rng.gen_range(-0.001..0.001);
+    let noise: f64 = rng.gen_range(-0.001..0.001);
     best_value += noise;
 
     (best_value, best_move, max_compute - remaining, pruned)
 }
 
-fn minimax(state: &GameState, max_compute: u64) -> (f32, Option<u8>, u64) {
+fn minimax(state: &GameState, max_compute: u64) -> (f64, Option<u8>, u64) {
     let (best_value, best_move, remaining, _) = 
         minimax_local(state, max_compute, -INFINITY, INFINITY, true);
     (best_value, best_move, remaining)
